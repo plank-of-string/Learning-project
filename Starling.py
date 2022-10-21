@@ -32,27 +32,27 @@ class Starling:
 	def check_bounds(self):
 	    if self.x <= 0:
 	    	self.x = 10
-	    	self.direc += 20
+	    	self.direc += 0.5
 	    elif self.x >= self.x_bound:
 	        self.x = self.x_bound-10
-	        self.direc += 20
+	        self.direc += 0.5
 	    if self.y <= 0:
 	        self.y = 10
-	        self.direc += 20
+	        self.direc += 0.5
 	    elif self.y >= self.y_bound:
 	        self.y = self.y_bound-10
-	        self.direc += 20        
+	        self.direc += 0.5
 
 	#Calculates the distance to the currently passed other starling
 	def Dist(self):
-		Hyp_dist = math.sqrt((self.x - self.O_x)**2 + (self.y - self.O_y)**2)
+		Hyp_dist = math.sqrt((self.x - self.O_x)**2 + (self.y - self.O_y)**2)+0.00001 #'0.00001' is here to prevent divison by zero in the event of starling overlap
 		Opp_dist = math.sqrt((self.O_x - self.x)**2)
 		Direc_to_other = (180 - (math.asin(Opp_dist/Hyp_dist)))
 		return Hyp_dist, Direc_to_other
 
 	#Calculates if the currently passed other starling is in sight
 	def in_sight(self):
-		radius = 3000 # <--- Sight radius
+		radius = 2000 # <--- Sight radius
 		fov = 360    # <--- Feild of view
 		fovL = self.direc - fov/2
 		fovR = self.direc + fov/2
@@ -68,13 +68,13 @@ class Starling:
 	#Acts to condense the murmur
 	def cohesion(self):
 		New_direct_1 = self.Dist()[1]
-		New_direct_1 -= New_direct_1/1.8 #Adds movement weight
+		#New_direct_1 -= New_direct_1/1.15 #Adds movement weight
 		return New_direct_1
 
 	#Changes the direction of the starling to align with the direction of the other starling that is in sight
 	def alignment(self):
 		New_direct_2 = self.O_direc 	
-		New_direct_2 -= New_direct_2/1.8
+		#New_direct_2 -= New_direct_2/1.15
 		return New_direct_2
 
 	#Makes the starlings move away from each other if they get too close
@@ -83,7 +83,7 @@ class Starling:
 			New_direct_3 = self.direc-self.Dist()[1]
 		else:
 			New_direct_3 = self.direc+self.Dist()[1]
-		New_direct_3 -= New_direct_3/2
+		#New_direct_3 -= New_direct_3/1
 		return New_direct_3
 
 	#Preforms multiple logic arguments depending on if the other starling is in sight, etc...
@@ -94,22 +94,16 @@ class Starling:
 			if self.speed < self.O_V:
 				if self.speed < 10:
 					self.speed += 1 	#Makes the starlings match their speed with their nearest starling
-			if self.speed > self.O_V:
+			elif self.speed > self.O_V:
 				if self.speed > 10:
 					self.speed -= 1
 			if self.O_mass > self.mass:
 				if Align_dist > self.Dist()[0] > Min_dist:
-					New_direct = int(((self.Dist()[0]/Align_dist)*self.cohesion() + (Min_dist/self.Dist()[0])*self.alignment())/2)
+					New_direct = (self.cohesion() + self.alignment())/2
 					return New_direct, self.mass, self.speed
 				elif self.Dist()[0] > Min_dist:
-					self.mass += 10 #Adds a mass to the starling that is at the centre of the murmur to act as an initilizer for the murmur
-					if self.speed < 15:
-						self.speed += 1
-						return self.cohesion(), self.mass, self.speed
-					else:
-						return self.cohesion(), self.mass, self.speed
+					return self.cohesion(), self.mass, self.speed
 				else:	
-					self.mass += 10		#Mass still increases to generate a murmur
 					return self.avoidance(), self.mass, self.speed
 			elif self.Dist()[0] <= Min_dist:
 				self.mass += 10			#Mass still increases to generate a murmur
@@ -117,14 +111,8 @@ class Starling:
 			else:
 				self.mass += 10
 				return self.direc, self.mass, self.speed
-		elif self.mass > 0:
-			self.mass -= 10 #Forces Starlings who are outside of the murmur to lose mass and speed
-			if self.speed > 5:
-				self.speed -= 1
-				return self.direc, self.mass, self.speed
-			else:
-				return self.direc, self.mass, self.speed
 		else: 	
+			self.mass -= 20
 			return self.direc, self.mass, self.speed #Retruns inital values if no other starlings are about
 
 	#Outputs the new postion of the starling
